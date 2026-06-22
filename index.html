@@ -1,0 +1,699 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>GSTCHAIN — Next-Gen Blockchain Infrastructure</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+    :root {
+      --space-deep: #07070f;
+      --space-mid: #0b0b16;
+      --surface: #12121e;
+      --surface-raised: #1a1a2e;
+      --glass-bg: rgba(255,255,255,0.03);
+      --glass-border: rgba(255,255,255,0.06);
+      --glass-border-hover: rgba(255,255,255,0.18);
+      --glass-highlight: rgba(255,255,255,0.04);
+      --text-primary: #f0f0f5;
+      --text-secondary: #b0b0bc;
+      --text-tertiary: #78788a;
+      --electric-blue: #60cdff;
+      --cyan: #22d3ee;
+      --purple: #a78bfa;
+      --green: #22c55e;
+      --gold: #f59e0b;
+      --pink: #f472b6;
+      --spring: cubic-bezier(0.16, 1, 0.3, 1);
+      --radius: 18px;
+      --radius-sm: 10px;
+      font-family: 'Inter', system-ui, -apple-system, sans-serif;
+      color: var(--text-primary);
+      scroll-behavior: smooth;
+    }
+    body { background: var(--space-deep); overflow-x: hidden; }
+
+    /* ── Animated Background ── */
+    #particle-canvas { position: fixed; inset: 0; z-index: 0; pointer-events: none; }
+
+    /* ── Scrollbar ── */
+    ::-webkit-scrollbar { width: 6px; }
+    ::-webkit-scrollbar-track { background: var(--space-deep); }
+    ::-webkit-scrollbar-thumb { background: var(--glass-border); border-radius: 3px; }
+
+    /* ── Nav ── */
+    nav {
+      position: fixed; top: 0; left: 0; right: 0; z-index: 100;
+      padding: 16px 32px;
+      display: flex; align-items: center; justify-content: space-between;
+      background: rgba(7,7,15,0.7);
+      backdrop-filter: blur(20px) saturate(180%);
+      -webkit-backdrop-filter: blur(20px) saturate(180%);
+      border-bottom: 1px solid var(--glass-border);
+      transition: transform 0.4s var(--spring);
+    }
+    nav.scrolled { box-shadow: 0 4px 40px rgba(0,0,0,0.6); }
+    .nav-logo { display: flex; align-items: center; gap: 12px; font-weight: 700; font-size: 1.2rem; text-decoration: none; color: var(--text-primary); }
+    .nav-logo .logo-icon { width: 32px; height: 32px; background: linear-gradient(135deg, var(--electric-blue), var(--purple)); border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 14px; font-weight: 800; }
+    .nav-links { display: flex; gap: 8px; align-items: center; }
+    .nav-links a {
+      padding: 8px 16px; border-radius: var(--radius-sm);
+      text-decoration: none; color: var(--text-secondary); font-size: 0.85rem; font-weight: 500;
+      transition: all 0.25s var(--spring);
+    }
+    .nav-links a:hover { background: var(--glass-bg); color: var(--text-primary); }
+    .nav-cta {
+      padding: 8px 20px; border-radius: var(--radius-sm);
+      background: linear-gradient(135deg, var(--electric-blue), var(--purple));
+      color: #fff !important; font-weight: 600;
+    }
+    .nav-cta:hover { transform: scale(1.05); box-shadow: 0 4px 20px rgba(96,205,255,0.3); }
+    .hamburger { display: none; flex-direction: column; gap: 5px; cursor: pointer; background: none; border: none; padding: 4px; }
+    .hamburger span { width: 24px; height: 2px; background: var(--text-primary); border-radius: 2px; transition: 0.3s var(--spring); }
+    @media (max-width: 900px) {
+      .nav-links { display: none; position: fixed; top: 64px; left: 0; right: 0; flex-direction: column; padding: 16px; background: rgba(7,7,15,0.95); backdrop-filter: blur(20px); border-bottom: 1px solid var(--glass-border); }
+      .nav-links.open { display: flex; }
+      .hamburger { display: flex; }
+    }
+
+    /* ── Sections Common ── */
+    section { position: relative; z-index: 1; padding: 100px 24px; max-width: 1200px; margin: 0 auto; }
+    .section-tag {
+      display: inline-block; padding: 6px 14px; border-radius: 100px;
+      background: rgba(96,205,255,0.1); border: 1px solid rgba(96,205,255,0.2);
+      color: var(--electric-blue); font-size: 0.75rem; font-weight: 600; letter-spacing: 0.05em; text-transform: uppercase;
+      margin-bottom: 16px;
+    }
+    .section-title {
+      font-size: clamp(2rem, 5vw, 3.5rem); font-weight: 800; line-height: 1.15;
+      margin-bottom: 16px;
+    }
+    .section-title .gradient { background: linear-gradient(135deg, var(--electric-blue), var(--purple)); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; }
+    .section-desc { color: var(--text-secondary); font-size: 1.1rem; line-height: 1.7; max-width: 640px; margin-bottom: 48px; }
+
+    /* ── Hero ── */
+    #hero { min-height: 100vh; display: flex; align-items: center; justify-content: center; text-align: center; padding-top: 80px; }
+    .hero-content { max-width: 800px; }
+    .hero-badge {
+      display: inline-flex; align-items: center; gap: 8px;
+      padding: 8px 18px; border-radius: 100px;
+      background: var(--glass-bg); border: 1px solid var(--glass-border);
+      font-size: 0.8rem; color: var(--text-secondary); margin-bottom: 24px;
+    }
+    .hero-badge .dot { width: 6px; height: 6px; border-radius: 50%; background: var(--green); animation: pulse-dot 1.5s ease-in-out infinite; }
+    @keyframes pulse-dot { 0%,100% { opacity: 1; transform: scale(1); } 50% { opacity: 0.4; transform: scale(0.8); } }
+    .hero-title { font-size: clamp(2.8rem, 7vw, 5.5rem); font-weight: 900; line-height: 1.05; margin-bottom: 24px; letter-spacing: -0.02em; }
+    .hero-title .gradient { background: linear-gradient(135deg, #fff 0%, var(--electric-blue) 40%, var(--purple) 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; }
+    .hero-sub { color: var(--text-secondary); font-size: 1.15rem; line-height: 1.7; max-width: 600px; margin: 0 auto 40px; }
+    .hero-actions { display: flex; gap: 12px; justify-content: center; flex-wrap: wrap; }
+    .btn-primary, .btn-secondary {
+      padding: 14px 32px; border-radius: var(--radius-sm); font-size: 0.95rem;
+      font-weight: 600; text-decoration: none; transition: all 0.35s var(--spring);
+      cursor: pointer; border: none; display: inline-flex; align-items: center; gap: 8px;
+    }
+    .btn-primary { background: linear-gradient(135deg, var(--electric-blue), var(--purple)); color: #fff; box-shadow: 0 4px 24px rgba(96,205,255,0.25); }
+    .btn-primary:hover { transform: translateY(-3px) scale(1.02); box-shadow: 0 8px 40px rgba(96,205,255,0.35); }
+    .btn-secondary { background: var(--glass-bg); border: 1px solid var(--glass-border); color: var(--text-primary); }
+    .btn-secondary:hover { background: var(--surface-raised); border-color: var(--glass-border-hover); transform: translateY(-2px); }
+
+    .hero-stats { display: flex; gap: 40px; justify-content: center; margin-top: 60px; flex-wrap: wrap; }
+    .hero-stat { text-align: center; }
+    .hero-stat-num { font-size: 2rem; font-weight: 800; font-family: 'JetBrains Mono', monospace; }
+    .hero-stat-label { color: var(--text-tertiary); font-size: 0.8rem; margin-top: 4px; text-transform: uppercase; letter-spacing: 0.05em; }
+
+    /* ── Glass Card ── */
+    .glass-card {
+      background: linear-gradient(135deg, rgba(255,255,255,0.04), rgba(5,5,8,0.6));
+      backdrop-filter: blur(25px) saturate(210%);
+      -webkit-backdrop-filter: blur(25px) saturate(210%);
+      border: 1px solid var(--glass-border);
+      border-radius: var(--radius);
+      box-shadow: 0 8px 32px rgba(0,0,0,0.5), inset 0 1px 0 rgba(255,255,255,0.06);
+      transition: all 0.4s var(--spring);
+    }
+    .glass-card:hover {
+      border-color: var(--glass-border-hover);
+      box-shadow: 0 12px 40px rgba(0,0,0,0.7), inset 0 1px 0 rgba(255,255,255,0.1);
+      transform: translateY(-4px) scale(1.01);
+    }
+
+    /* ── Scroll Reveal ── */
+    .reveal {
+      opacity: 0; transform: translateY(40px);
+      transition: opacity 0.8s var(--spring), transform 0.8s var(--spring);
+    }
+    .reveal.visible { opacity: 1; transform: translateY(0); }
+    .reveal-left { opacity: 0; transform: translateX(-60px); transition: opacity 0.8s var(--spring), transform 0.8s var(--spring); }
+    .reveal-left.visible { opacity: 1; transform: translateX(0); }
+    .reveal-right { opacity: 0; transform: translateX(60px); transition: opacity 0.8s var(--spring), transform 0.8s var(--spring); }
+    .reveal-right.visible { opacity: 1; transform: translateX(0); }
+    .reveal-scale { opacity: 0; transform: scale(0.9); transition: opacity 0.8s var(--spring), transform 0.8s var(--spring); }
+    .reveal-scale.visible { opacity: 1; transform: scale(1); }
+
+    /* ── Features Grid ── */
+    .features-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 20px; }
+    .feature-card { padding: 32px; }
+    .feature-icon { width: 48px; height: 48px; border-radius: 12px; display: flex; align-items: center; justify-content: center; font-size: 1.4rem; margin-bottom: 16px; }
+    .feature-card h3 { font-size: 1.2rem; font-weight: 700; margin-bottom: 10px; }
+    .feature-card p { color: var(--text-secondary); font-size: 0.9rem; line-height: 1.6; }
+    .feature-tags { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 14px; }
+    .feature-tag { padding: 4px 10px; border-radius: 100px; font-size: 0.7rem; font-weight: 500; background: rgba(255,255,255,0.05); border: 1px solid var(--glass-border); color: var(--text-tertiary); }
+
+    /* ── Product Showcase ── */
+    .product-row { display: grid; grid-template-columns: 1fr 1fr; gap: 40px; align-items: center; margin-bottom: 100px; }
+    .product-row.reverse { direction: rtl; }
+    .product-row.reverse > * { direction: ltr; }
+    .product-visual { padding: 32px; min-height: 320px; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; }
+    .product-visual .big-icon { font-size: 3.5rem; margin-bottom: 16px; }
+    .product-visual h3 { font-size: 1.5rem; font-weight: 700; margin-bottom: 8px; }
+    .product-visual p { color: var(--text-secondary); font-size: 0.9rem; max-width: 360px; }
+    .product-info h2 { font-size: 1.8rem; font-weight: 800; margin-bottom: 12px; }
+    .product-info p { color: var(--text-secondary); line-height: 1.7; margin-bottom: 16px; }
+    .product-features { list-style: none; display: flex; flex-direction: column; gap: 8px; }
+    .product-features li { display: flex; align-items: center; gap: 10px; font-size: 0.9rem; color: var(--text-secondary); }
+    .product-features li::before { content: "→"; color: var(--electric-blue); font-weight: 700; }
+    .product-links { display: flex; gap: 12px; margin-top: 20px; flex-wrap: wrap; }
+    .product-links a { padding: 10px 20px; border-radius: var(--radius-sm); font-size: 0.85rem; font-weight: 600; text-decoration: none; transition: all 0.3s var(--spring); background: var(--glass-bg); border: 1px solid var(--glass-border); color: var(--text-primary); }
+    .product-links a:hover { border-color: var(--glass-border-hover); transform: translateY(-2px); }
+    @media (max-width: 800px) { .product-row, .product-row.reverse { grid-template-columns: 1fr; direction: ltr; } .product-row.reverse > * { direction: ltr; } }
+
+    /* ── Architecture Diagram ── */
+    .arch-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 16px; }
+    .arch-card { padding: 24px; text-align: center; }
+    .arch-card .lvl { font-size: 0.65rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.08em; color: var(--text-tertiary); margin-bottom: 6px; }
+    .arch-card h4 { font-size: 1rem; font-weight: 700; margin-bottom: 4px; }
+    .arch-card p { color: var(--text-secondary); font-size: 0.8rem; }
+    .arch-arrow { text-align: center; color: var(--text-tertiary); font-size: 1.2rem; padding: 4px 0; }
+
+    /* ── Repos Section ── */
+    .repos-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 16px; }
+    .repo-card { padding: 24px; display: flex; flex-direction: column; }
+    .repo-card .repo-name { font-family: 'JetBrains Mono', monospace; font-size: 0.85rem; font-weight: 600; color: var(--electric-blue); margin-bottom: 8px; }
+    .repo-card .repo-desc { color: var(--text-secondary); font-size: 0.85rem; line-height: 1.5; flex: 1; margin-bottom: 12px; }
+    .repo-card .repo-meta { display: flex; gap: 16px; font-size: 0.75rem; color: var(--text-tertiary); }
+    .repo-card .repo-meta span { display: flex; align-items: center; gap: 4px; }
+    .repo-card .repo-link { margin-top: 12px; padding: 8px 16px; border-radius: var(--radius-sm); background: var(--glass-bg); border: 1px solid var(--glass-border); color: var(--text-primary); text-decoration: none; font-size: 0.8rem; font-weight: 600; text-align: center; transition: all 0.3s var(--spring); }
+    .repo-card .repo-link:hover { border-color: var(--glass-border-hover); transform: translateY(-2px); }
+
+    /* ── Whitepaper CTA ── */
+    .whitepaper-cta { padding: 64px 48px; text-align: center; margin-top: 40px; }
+    .whitepaper-cta h2 { font-size: 2rem; font-weight: 800; margin-bottom: 12px; }
+    .whitepaper-cta p { color: var(--text-secondary); max-width: 500px; margin: 0 auto 24px; }
+
+    /* ── Token Section ── */
+    .token-info { display: grid; grid-template-columns: 1fr 1fr; gap: 40px; align-items: center; padding: 48px; }
+    .token-specs { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+    .token-spec { padding: 16px; border-radius: var(--radius-sm); background: var(--glass-bg); border: 1px solid var(--glass-border); }
+    .token-spec .label { font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.05em; color: var(--text-tertiary); margin-bottom: 4px; }
+    .token-spec .value { font-size: 1rem; font-weight: 700; font-family: 'JetBrains Mono', monospace; }
+    .token-art { display: flex; flex-direction: column; align-items: center; gap: 16px; }
+    .token-circle { width: 120px; height: 120px; border-radius: 50%; background: linear-gradient(135deg, var(--electric-blue), var(--purple)); display: flex; align-items: center; justify-content: center; font-size: 2.5rem; font-weight: 900; box-shadow: 0 0 60px rgba(96,205,255,0.3); animation: token-glow 3s ease-in-out infinite; }
+    @keyframes token-glow { 0%,100% { box-shadow: 0 0 40px rgba(96,205,255,0.2); } 50% { box-shadow: 0 0 80px rgba(96,205,255,0.4); } }
+    @media (max-width: 700px) { .token-info { grid-template-columns: 1fr; } .token-specs { grid-template-columns: 1fr; } }
+
+    /* ── Footer ── */
+    footer { position: relative; z-index: 1; text-align: center; padding: 48px 24px; border-top: 1px solid var(--glass-border); color: var(--text-tertiary); font-size: 0.85rem; }
+    footer a { color: var(--text-secondary); text-decoration: none; }
+    footer a:hover { color: var(--electric-blue); }
+    .footer-links { display: flex; gap: 16px; justify-content: center; flex-wrap: wrap; margin-bottom: 16px; }
+    .footer-links a { font-size: 0.8rem; }
+
+    /* ── Loader ── */
+    #loader { position: fixed; inset: 0; z-index: 9999; background: var(--space-deep); display: flex; align-items: center; justify-content: center; flex-direction: column; gap: 16px; transition: opacity 0.6s, visibility 0.6s; }
+    #loader.hidden { opacity: 0; visibility: hidden; }
+    .loader-ring { width: 48px; height: 48px; border: 3px solid var(--glass-border); border-top-color: var(--electric-blue); border-radius: 50%; animation: spin 0.8s linear infinite; }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    /* ── Parallax Divider ── */
+    .divider { position: relative; z-index: 1; height: 1px; background: linear-gradient(90deg, transparent, var(--glass-border), transparent); margin: 0 24px; }
+
+    /* ── Screenshot mockup ── */
+    .mockup-window { width: 100%; max-width: 480px; border-radius: var(--radius-sm); overflow: hidden; border: 1px solid var(--glass-border); background: var(--space-mid); }
+    .mockup-bar { padding: 10px 14px; display: flex; align-items: center; gap: 8px; background: var(--surface-raised); border-bottom: 1px solid var(--glass-border); }
+    .mockup-dot { width: 10px; height: 10px; border-radius: 50%; }
+    .mockup-dot:nth-child(1) { background: #ef4444; }
+    .mockup-dot:nth-child(2) { background: #f59e0b; }
+    .mockup-dot:nth-child(3) { background: #22c55e; }
+    .mockup-content { padding: 20px; font-family: 'JetBrains Mono', monospace; font-size: 0.75rem; line-height: 1.8; color: var(--text-secondary); text-align: left; }
+    .mockup-content .cmd { color: var(--green); }
+    .mockup-content .path { color: var(--electric-blue); }
+    .mockup-content .out { color: var(--text-tertiary); }
+
+    /* ── Responsive tweaks ── */
+    @media (max-width: 600px) { section { padding: 60px 16px; } .hero-stats { gap: 20px; } }
+  </style>
+</head>
+<body>
+
+<div id="loader"><div class="loader-ring"></div><span style="color:var(--text-secondary);font-size:0.85rem;">Loading GSTCHAIN...</span></div>
+<canvas id="particle-canvas"></canvas>
+
+<nav id="nav">
+  <a href="#" class="nav-logo"><span class="logo-icon">G</span> GSTCHAIN</a>
+  <div class="nav-links" id="nav-links">
+    <a href="#features">Features</a>
+    <a href="#products">Products</a>
+    <a href="#architecture">Architecture</a>
+    <a href="#token">Token</a>
+    <a href="#repos">GitHub</a>
+    <a href="https://github.com/mst-chain/whitepaper" target="_blank" class="nav-cta">Whitepaper</a>
+  </div>
+  <button class="hamburger" id="hamburger" aria-label="Menu"><span></span><span></span><span></span></button>
+</nav>
+
+<!-- ══════════════════ HERO ══════════════════ -->
+<section id="hero">
+  <div class="hero-content">
+    <div class="hero-badge reveal"><span class="dot"></span> Mainnet Live</div>
+    <h1 class="hero-title reveal" style="transition-delay:0.1s">Build on <span class="gradient">GSTCHAIN</span></h1>
+    <p class="hero-sub reveal" style="transition-delay:0.2s">A high-performance blockchain ecosystem with certificate management, token scanning, blockchain snapshots, and enterprise-grade APIs — all fully open source.</p>
+    <div class="hero-actions reveal" style="transition-delay:0.3s">
+      <a href="#features" class="btn-primary">Explore Features ↓</a>
+      <a href="https://github.com/mst-chain" target="_blank" class="btn-secondary">GitHub →</a>
+    </div>
+    <div class="hero-stats reveal" style="transition-delay:0.4s">
+      <div class="hero-stat"><div class="hero-stat-num">6</div><div class="hero-stat-label">Open Source Repos</div></div>
+      <div class="hero-stat"><div class="hero-stat-num">100%</div><div class="hero-stat-label">On-Chain</div></div>
+      <div class="hero-stat"><div class="hero-stat-num">ERC</div><div class="hero-stat-label">Token Standards</div></div>
+    </div>
+  </div>
+</section>
+
+<div class="divider"></div>
+
+<!-- ══════════════════ FEATURES ══════════════════ -->
+<section id="features">
+  <div class="reveal"><span class="section-tag">Capabilities</span></div>
+  <h2 class="section-title reveal" style="transition-delay:0.05s">Everything <span class="gradient">GSTCHAIN</span> Offers</h2>
+  <p class="section-desc reveal" style="transition-delay:0.1s">A complete blockchain infrastructure stack — from certificate issuance to chain scanning to archival snapshots.</p>
+  <div class="features-grid">
+    <div class="glass-card feature-card reveal-scale" style="transition-delay:0.1s">
+      <div class="feature-icon" style="background:rgba(96,205,255,0.15);color:var(--electric-blue)">📜</div>
+      <h3>Certificate Management</h3>
+      <p>Issue, verify, and manage digital certificates on-chain with JWT-authenticated REST APIs. Supports metadata, events, and role-based access.</p>
+      <div class="feature-tags"><span class="feature-tag">NestJS</span><span class="feature-tag">MongoDB</span><span class="feature-tag">JWT</span></div>
+    </div>
+    <div class="glass-card feature-card reveal-scale" style="transition-delay:0.2s">
+      <div class="feature-icon" style="background:rgba(167,139,250,0.15);color:var(--purple)">🔍</div>
+      <h3>Blockchain Scanner</h3>
+      <p>Real-time token indexing for ERC-20, ERC-721, and ERC-1155. Tracks transfers, balances, holders, and total supply with PostgreSQL + Prisma.</p>
+      <div class="feature-tags"><span class="feature-tag">NestJS</span><span class="feature-tag">Prisma</span><span class="feature-tag">ethers.js</span></div>
+    </div>
+    <div class="glass-card feature-card reveal-scale" style="transition-delay:0.3s">
+      <div class="feature-icon" style="background:rgba(34,197,94,0.15);color:var(--green)">💾</div>
+      <h3>Blockchain Snapshots</h3>
+      <p>Automated shell scripts to download, verify, and reassemble full and archive blockchain snapshots from S3 — with integrity checks.</p>
+      <div class="feature-tags"><span class="feature-tag">Bash</span><span class="feature-tag">S3</span><span class="feature-tag">sha256</span></div>
+    </div>
+    <div class="glass-card feature-card reveal-scale" style="transition-delay:0.4s">
+      <div class="feature-icon" style="background:rgba(245,158,11,0.15);color:var(--gold)">🔎</div>
+      <h3>BlockScout Explorer</h3>
+      <p>Full-featured blockchain explorer via BlockScout API v2. View transactions, blocks, addresses, tokens, and internal operations.</p>
+      <div class="feature-tags"><span class="feature-tag">BlockScout</span><span class="feature-tag">OpenAPI</span><span class="feature-tag">Swagger</span></div>
+    </div>
+    <div class="glass-card feature-card reveal-scale" style="transition-delay:0.5s">
+      <div class="feature-icon" style="background:rgba(244,114,182,0.15);color:var(--pink)">📄</div>
+      <h3>Technical Whitepaper</h3>
+      <p>Comprehensive technical documentation covering GSTCHAIN's architecture, consensus mechanism, tokenomics, and roadmap.</p>
+      <div class="feature-tags"><span class="feature-tag">Research</span><span class="feature-tag">Documentation</span></div>
+    </div>
+    <div class="glass-card feature-card reveal-scale" style="transition-delay:0.6s">
+      <div class="feature-icon" style="background:rgba(34,211,238,0.15);color:var(--cyan)">🎨</div>
+      <h3>Brand Assets</h3>
+      <p>Official GSTCHAIN logos, icons, and branding assets in SVG format for integrations, dApps, and partner applications.</p>
+      <div class="feature-tags"><span class="feature-tag">SVG</span><span class="feature-tag">Branding</span></div>
+    </div>
+  </div>
+</section>
+
+<div class="divider"></div>
+
+<!-- ══════════════════ PRODUCTS ══════════════════ -->
+<section id="products">
+  <div class="reveal"><span class="section-tag">Products</span></div>
+  <h2 class="section-title reveal" style="transition-delay:0.05s">The <span class="gradient">GSTCHAIN</span> Stack</h2>
+  <p class="section-desc reveal" style="transition-delay:0.1s">Six integrated open-source projects that power the GSTCHAIN ecosystem.</p>
+
+  <!-- Product 1: cert-backend -->
+  <div class="product-row reveal-left">
+    <div class="glass-card product-visual">
+      <div class="big-icon">📜</div>
+      <h3>gst-backend</h3>
+      <p>Certificate management API server</p>
+      <div class="mockup-window" style="margin-top:16px">
+        <div class="mockup-bar"><span class="mockup-dot"></span><span class="mockup-dot"></span><span class="mockup-dot"></span></div>
+        <div class="mockup-content">
+          <span class="cmd">POST</span> <span class="path">/auth/login</span> → JWT token<br>
+          <span class="cmd">POST</span> <span class="path">/certificates</span> → Create certificate<br>
+          <span class="cmd">GET</span>  <span class="path">/certificates/:id</span> → Verify<br>
+          <span class="cmd">GET</span>  <span class="path">/events</span> → List events<br>
+          <span class="out">✓ All endpoints JWT-protected</span>
+        </div>
+      </div>
+    </div>
+    <div class="product-info">
+      <h2>Certificate Management API</h2>
+      <p>A NestJS backend for issuing, managing, and verifying digital certificates on the GSTCHAIN blockchain. Features JWT authentication, Swagger documentation, MongoDB persistence, and role-based access control.</p>
+      <ul class="product-features">
+        <li>JWT-based authentication with bcrypt password hashing</li>
+        <li>Full CRUD for certificates, events, candidates, and users</li>
+        <li>Auto-generated timestamps and Swagger/OpenAPI docs</li>
+        <li>Role-based admin and user management</li>
+      </ul>
+      <div class="product-links">
+        <a href="https://github.com/mst-chain/cert-backend" target="_blank">Source →</a>
+      </div>
+    </div>
+  </div>
+
+  <!-- Product 2: scanner -->
+  <div class="product-row reverse reveal-right">
+    <div class="glass-card product-visual">
+      <div class="big-icon">🔍</div>
+      <h3>gst-scanner</h3>
+      <p>Blockchain token indexer</p>
+      <div class="mockup-window" style="margin-top:16px">
+        <div class="mockup-bar"><span class="mockup-dot"></span><span class="mockup-dot"></span><span class="mockup-dot"></span></div>
+        <div class="mockup-content">
+          <span class="cmd">syncErc20</span>(token) → Index transfers<br>
+          <span class="cmd">syncErc721</span>(token) → Track NFTs<br>
+          <span class="cmd">getHoldersOf</span>(token) → Holder list<br>
+          <span class="cmd">getInfo</span>(token) → Token metadata<br>
+          <span class="out">✓ Real-time with 10s polling</span>
+        </div>
+      </div>
+    </div>
+    <div class="product-info">
+      <h2>Blockchain Token Scanner</h2>
+      <p>Real-time blockchain scanner that indexes ERC-20, ERC-721, and ERC-1155 tokens. Built with NestJS, Prisma, PostgreSQL, and ethers.js for reliable on-chain data indexing.</p>
+      <ul class="product-features">
+        <li>Automatic ERC-20/ERC-721/ERC-1155 token detection</li>
+        <li>Transfer history, balance tracking, and holder analytics</li>
+        <li>PostgreSQL with Prisma for type-safe queries</li>
+        <li>10-second polling with exponential backoff</li>
+      </ul>
+      <div class="product-links">
+        <a href="https://github.com/mst-chain/mst-scanner" target="_blank">Source →</a>
+      </div>
+    </div>
+  </div>
+
+  <!-- Product 3: snapshots -->
+  <div class="product-row reveal-left">
+    <div class="glass-card product-visual">
+      <div class="big-icon">💾</div>
+      <h3>gst-snapshots</h3>
+      <p>Blockchain data snapshots</p>
+      <div class="mockup-window" style="margin-top:16px">
+        <div class="mockup-bar"><span class="mockup-dot"></span><span class="mockup-dot"></span><span class="mockup-dot"></span></div>
+        <div class="mockup-content">
+          <span class="cmd">$</span> ./mainnet-archive-snapshot.sh<br>
+          <span class="out">Downloading manifest... ✓<br>Verifying sha256... ✓<br>Reassembling archive... ✓<br>Done → gstchain-mainnet-archive.tar.gz</span>
+        </div>
+      </div>
+    </div>
+    <div class="product-info">
+      <h2>Blockchain Snapshots</h2>
+      <p>Shell scripts to download, verify, and reassemble full and archive snapshots of the GSTCHAIN blockchain from S3, with automatic integrity verification.</p>
+      <ul class="product-features">
+        <li>Full and archive snapshot options</li>
+        <li>SHA-256 checksum verification (cross-platform)</li>
+        <li>Automatic part reassembly with version sorting</li>
+        <li>Resumable downloads with error handling</li>
+      </ul>
+      <div class="product-links">
+        <a href="https://github.com/mst-chain/mst-snapshots" target="_blank">Source →</a>
+      </div>
+    </div>
+  </div>
+
+  <!-- Product 4: blockscout explorer -->
+  <div class="product-row reverse reveal-right">
+    <div class="glass-card product-visual">
+      <div class="big-icon">🔎</div>
+      <h3>BlockScout Explorer</h3>
+      <p>Blockchain explorer API</p>
+      <div class="mockup-window" style="margin-top:16px">
+        <div class="mockup-bar"><span class="mockup-dot"></span><span class="mockup-dot"></span><span class="mockup-dot"></span></div>
+        <div class="mockup-content">
+          <span class="cmd">GET</span> <span class="path">/api/v2/transactions</span><br>
+          <span class="cmd">GET</span> <span class="path">/api/v2/tokens</span><br>
+          <span class="cmd">GET</span> <span class="path">/api/v2/addresses/:hash</span><br>
+          <span class="out">✓ BlockScout API v2 compatible</span>
+        </div>
+      </div>
+    </div>
+    <div class="product-info">
+      <h2>BlockScout API v2</h2>
+      <p>Full BlockScout API v2 specification for exploring the GSTCHAIN blockchain. View transactions, blocks, addresses, tokens, and internal operations via a standardized OpenAPI interface.</p>
+      <ul class="product-features">
+        <li>BlockScout-compatible API endpoints</li>
+        <li>Transaction and block exploration</li>
+        <li>Token and address lookups</li>
+        <li>OpenAPI / Swagger documentation</li>
+      </ul>
+      <div class="product-links">
+        <a href="https://github.com/mst-chain/blockscout-api-v2-swagger" target="_blank">Source →</a>
+        <a href="https://mstscan.com/api/v2" target="_blank">Live API →</a>
+      </div>
+    </div>
+  </div>
+</section>
+
+<div class="divider"></div>
+
+<!-- ══════════════════ ARCHITECTURE ══════════════════ -->
+<section id="architecture">
+  <div class="reveal"><span class="section-tag">Architecture</span></div>
+  <h2 class="section-title reveal" style="transition-delay:0.05s">System <span class="gradient">Architecture</span></h2>
+  <p class="section-desc reveal" style="transition-delay:0.1s">How the GSTCHAIN ecosystem components connect and interact.</p>
+  <div class="arch-grid">
+    <div class="glass-card arch-card reveal-scale" style="transition-delay:0.1s">
+      <div class="lvl">Layer 1</div>
+      <h4>GSTCHAIN Blockchain</h4>
+      <p>Core blockchain network with consensus and transaction processing</p>
+    </div>
+    <div class="glass-card arch-card reveal-scale" style="transition-delay:0.2s">
+      <div class="lvl">Layer 2</div>
+      <h4>BlockScout Explorer</h4>
+      <p>Block explorer providing chain visibility via REST API</p>
+    </div>
+    <div class="glass-card arch-card reveal-scale" style="transition-delay:0.3s">
+      <div class="lvl">Layer 3a</div>
+      <h4>gst-scanner</h4>
+      <p>Token indexing service tracking ERC-20/721/1155 transfers</p>
+    </div>
+    <div class="glass-card arch-card reveal-scale" style="transition-delay:0.4s">
+      <div class="lvl">Layer 3b</div>
+      <h4>gst-backend</h4>
+      <p>Certificate management API with JWT auth and MongoDB</p>
+    </div>
+    <div class="glass-card arch-card reveal-scale" style="transition-delay:0.5s">
+      <div class="lvl">Layer 4</div>
+      <h4>gst-snapshots</h4>
+      <p>Infrastructure scripts for chain snapshot distribution</p>
+    </div>
+    <div class="glass-card arch-card reveal-scale" style="transition-delay:0.6s">
+      <div class="lvl">Assets</div>
+      <h4>Whitepaper + Brand</h4>
+      <p>Technical documentation and official brand assets</p>
+    </div>
+  </div>
+</section>
+
+<div class="divider"></div>
+
+<!-- ══════════════════ TOKEN ══════════════════ -->
+<section id="token">
+  <div class="reveal"><span class="section-tag">Token</span></div>
+  <h2 class="section-title reveal" style="transition-delay:0.05s"><span class="gradient">GSTC</span> Token</h2>
+  <p class="section-desc reveal" style="transition-delay:0.1s">The native utility token powering the GSTCHAIN ecosystem.</p>
+  <div class="glass-card token-info reveal-scale">
+    <div class="token-art">
+      <div class="token-circle">G</div>
+      <h3 style="font-size:1.3rem;font-weight:700;">GSTC</h3>
+      <p style="color:var(--text-secondary);font-size:0.85rem;">GSTCHAIN Native Token</p>
+    </div>
+    <div class="token-specs">
+      <div class="token-spec"><div class="label">Token Standard</div><div class="value">ERC-20</div></div>
+      <div class="token-spec"><div class="label">Network</div><div class="value">GSTCHAIN</div></div>
+      <div class="token-spec"><div class="label">Decimals</div><div class="value">18</div></div>
+      <div class="token-spec"><div class="label">Use Cases</div><div class="value">Gas, Staking, Governance</div></div>
+      <div class="token-spec"><div class="label">Scanner API</div><div class="value">gst-scanner</div></div>
+      <div class="token-spec"><div class="label">Explorer</div><div class="value">BlockScout</div></div>
+    </div>
+  </div>
+</section>
+
+<div class="divider"></div>
+
+<!-- ══════════════════ REPOS ══════════════════ -->
+<section id="repos">
+  <div class="reveal"><span class="section-tag">Open Source</span></div>
+  <h2 class="section-title reveal" style="transition-delay:0.05s">All <span class="gradient">Repositories</span></h2>
+  <p class="section-desc reveal" style="transition-delay:0.1s">Every GSTCHAIN project is fully open source on GitHub.</p>
+  <div class="repos-grid">
+    <div class="glass-card repo-card reveal-scale" style="transition-delay:0.1s">
+      <div class="repo-name">gst-backend</div>
+      <div class="repo-desc">NestJS certificate management API with JWT auth, MongoDB, and Swagger documentation.</div>
+      <div class="repo-meta"><span>📦 TypeScript</span><span>⭐ 0</span></div>
+      <a href="https://github.com/mst-chain/cert-backend" target="_blank" class="repo-link">View →</a>
+    </div>
+    <div class="glass-card repo-card reveal-scale" style="transition-delay:0.2s">
+      <div class="repo-name">gst-scanner</div>
+      <div class="repo-desc">Real-time blockchain token indexer for ERC-20/721/1155 with Prisma + PostgreSQL.</div>
+      <div class="repo-meta"><span>📦 TypeScript</span><span>⭐ 0</span></div>
+      <a href="https://github.com/mst-chain/mst-scanner" target="_blank" class="repo-link">View →</a>
+    </div>
+    <div class="glass-card repo-card reveal-scale" style="transition-delay:0.3s">
+      <div class="repo-name">gst-snapshots</div>
+      <div class="repo-desc">Shell scripts for downloading and verifying full/archive blockchain snapshots.</div>
+      <div class="repo-meta"><span>📦 Shell</span><span>⭐ 2</span></div>
+      <a href="https://github.com/mst-chain/mst-snapshots" target="_blank" class="repo-link">View →</a>
+    </div>
+    <div class="glass-card repo-card reveal-scale" style="transition-delay:0.4s">
+      <div class="repo-name">blockscout-api-v2-swagger</div>
+      <div class="repo-desc">BlockScout API v2 OpenAPI specification for blockchain exploration.</div>
+      <div class="repo-meta"><span>📦 YAML</span><span>⭐ 0</span></div>
+      <a href="https://github.com/mst-chain/blockscout-api-v2-swagger" target="_blank" class="repo-link">View →</a>
+    </div>
+    <div class="glass-card repo-card reveal-scale" style="transition-delay:0.5s">
+      <div class="repo-name">whitepaper</div>
+      <div class="repo-desc">Technical whitepaper covering GSTCHAIN architecture, consensus, and tokenomics.</div>
+      <div class="repo-meta"><span>📦 Markdown</span><span>⭐ 0</span></div>
+      <a href="https://github.com/mst-chain/whitepaper" target="_blank" class="repo-link">Read →</a>
+    </div>
+    <div class="glass-card repo-card reveal-scale" style="transition-delay:0.6s">
+      <div class="repo-name">gstc-assets</div>
+      <div class="repo-desc">Official brand assets including logos and icons in SVG format.</div>
+      <div class="repo-meta"><span>📦 SVG</span><span>⭐ 1</span></div>
+      <a href="https://github.com/mst-chain/mstc-assets" target="_blank" class="repo-link">View →</a>
+    </div>
+  </div>
+</section>
+
+<div class="divider"></div>
+
+<!-- ══════════════════ WHITEPAPER CTA ══════════════════ -->
+<section>
+  <div class="glass-card whitepaper-cta reveal-scale">
+    <h2>Read the <span class="gradient">Whitepaper</span></h2>
+    <p>Dive deep into GSTCHAIN's technical architecture, consensus mechanism, tokenomics, and roadmap.</p>
+    <div style="display:flex;gap:12px;justify-content:center;flex-wrap:wrap;">
+      <a href="https://github.com/mst-chain/whitepaper" target="_blank" class="btn-primary">Read Whitepaper →</a>
+      <a href="https://github.com/mst-chain" target="_blank" class="btn-secondary">All Repositories →</a>
+    </div>
+  </div>
+</section>
+
+<footer>
+  <div class="footer-links">
+    <a href="https://github.com/mst-chain" target="_blank">GitHub</a>
+    <a href="https://github.com/mst-chain/whitepaper" target="_blank">Whitepaper</a>
+    <a href="https://github.com/mst-chain/cert-backend" target="_blank">Backend</a>
+    <a href="https://github.com/mst-chain/mst-scanner" target="_blank">Scanner</a>
+    <a href="https://mstscan.com" target="_blank">Explorer</a>
+    <a href="https://github.com/mst-chain/mst-snapshots" target="_blank">Snapshots</a>
+  </div>
+  <p>© 2026 GSTCHAIN. Open source blockchain infrastructure. Built with ❤️ for the decentralized future.</p>
+</footer>
+
+<script>
+  // ── Loader ──
+  window.addEventListener('load', () => document.getElementById('loader').classList.add('hidden'));
+
+  // ── Particle Canvas ──
+  (function() {
+    const canvas = document.getElementById('particle-canvas');
+    const ctx = canvas.getContext('2d');
+    let particles = [];
+    const COUNT = 80;
+    function resize() { canvas.width = window.innerWidth; canvas.height = document.documentElement.scrollHeight; }
+    window.addEventListener('resize', resize);
+    resize();
+    class Particle {
+      constructor() { this.reset(); }
+      reset() {
+        this.x = Math.random() * canvas.width;
+        this.y = Math.random() * canvas.height;
+        this.size = Math.random() * 2 + 0.5;
+        this.speedX = (Math.random() - 0.5) * 0.3;
+        this.speedY = (Math.random() - 0.5) * 0.3;
+        this.opacity = Math.random() * 0.5 + 0.1;
+      }
+      update() {
+        this.x += this.speedX; this.y += this.speedY;
+        if (this.x < 0 || this.x > canvas.width) this.speedX *= -1;
+        if (this.y < 0 || this.y > canvas.height) this.speedY *= -1;
+      }
+      draw() {
+        ctx.beginPath(); ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
+        ctx.fillStyle = `rgba(96,205,255,${this.opacity})`; ctx.fill();
+      }
+    }
+    for (let i = 0; i < COUNT; i++) particles.push(new Particle());
+    function animate() {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      for (const p of particles) { p.update(); p.draw(); }
+      // draw connections
+      for (let i = 0; i < particles.length; i++) {
+        for (let j = i + 1; j < particles.length; j++) {
+          const dx = particles[i].x - particles[j].x;
+          const dy = particles[i].y - particles[j].y;
+          const dist = Math.sqrt(dx * dx + dy * dy);
+          if (dist < 150) {
+            ctx.beginPath(); ctx.moveTo(particles[i].x, particles[i].y);
+            ctx.lineTo(particles[j].x, particles[j].y);
+            ctx.strokeStyle = `rgba(96,205,255,${0.06 * (1 - dist / 150)})`;
+            ctx.lineWidth = 0.5; ctx.stroke();
+          }
+        }
+      }
+      requestAnimationFrame(animate);
+    }
+    animate();
+    // update canvas height on scroll
+    const observer = new ResizeObserver(() => { canvas.height = document.documentElement.scrollHeight; });
+    observer.observe(document.body);
+  })();
+
+  // ── Scroll Reveal (Intersection Observer with spring physics) ──
+  const revealElements = document.querySelectorAll('.reveal, .reveal-left, .reveal-right, .reveal-scale');
+  const revealObserver = new IntersectionObserver((entries) => {
+    for (const entry of entries) {
+      if (entry.isIntersecting) {
+        entry.target.style.transitionDuration = '0.8s';
+        entry.target.classList.add('visible');
+      }
+    }
+  }, { threshold: 0.1, rootMargin: '0px 0px -50px 0px' });
+  for (const el of revealElements) revealObserver.observe(el);
+
+  // ── Nav scroll effect ──
+  const nav = document.getElementById('nav');
+  let lastScroll = 0;
+  window.addEventListener('scroll', () => {
+    const current = window.scrollY;
+    nav.classList.toggle('scrolled', current > 50);
+    lastScroll = current;
+  });
+
+  // ── Hamburger ──
+  const hamburger = document.getElementById('hamburger');
+  const navLinks = document.getElementById('nav-links');
+  hamburger.addEventListener('click', () => navLinks.classList.toggle('open'));
+  // close on link click
+  navLinks.querySelectorAll('a').forEach(a => a.addEventListener('click', () => navLinks.classList.remove('open')));
+
+  // ── Smooth scroll for anchor links ──
+  document.querySelectorAll('a[href^="#"]').forEach(a => {
+    a.addEventListener('click', (e) => {
+      const target = document.querySelector(a.getAttribute('href'));
+      if (target) { e.preventDefault(); target.scrollIntoView({ behavior: 'smooth' }); }
+    });
+  });
+</script>
+</body>
+</html>
